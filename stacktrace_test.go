@@ -21,6 +21,7 @@
 package zap
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -29,7 +30,7 @@ import (
 )
 
 func TestTakeStacktrace(t *testing.T) {
-	trace := takeStacktrace(0)
+	trace := takeStacktrace(0, math.MaxInt32)
 	lines := strings.Split(trace, "\n")
 	require.NotEmpty(t, lines, "Expected stacktrace to have at least one frame.")
 	assert.Contains(
@@ -41,7 +42,7 @@ func TestTakeStacktrace(t *testing.T) {
 }
 
 func TestTakeStacktraceWithSkip(t *testing.T) {
-	trace := takeStacktrace(1)
+	trace := takeStacktrace(1, math.MaxInt32)
 	lines := strings.Split(trace, "\n")
 	require.NotEmpty(t, lines, "Expected stacktrace to have at least one frame.")
 	assert.Contains(
@@ -55,7 +56,7 @@ func TestTakeStacktraceWithSkip(t *testing.T) {
 func TestTakeStacktraceWithSkipInnerFunc(t *testing.T) {
 	var trace string
 	func() {
-		trace = takeStacktrace(2)
+		trace = takeStacktrace(2, math.MaxInt32)
 	}()
 	lines := strings.Split(trace, "\n")
 	require.NotEmpty(t, lines, "Expected stacktrace to have at least one frame.")
@@ -69,6 +70,6 @@ func TestTakeStacktraceWithSkipInnerFunc(t *testing.T) {
 
 func BenchmarkTakeStacktrace(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		takeStacktrace(0)
+		takeStacktrace(0, math.MaxInt32)
 	}
 }

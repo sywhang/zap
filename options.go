@@ -111,6 +111,15 @@ func AddCallerSkip(skip int) Option {
 	})
 }
 
+// SetCallerLimit limits the total number of call stacks to be included with
+// when the logger is configured to include stacktraces. This can be useful
+// when trying to limit amount of log entry to include top few stacktraces.
+func SetCallerLimit(limit int) Option {
+	return optionFunc(func(log *Logger) {
+		log.callerLimit = limit
+	})
+}
+
 // AddStacktrace configures the Logger to record a stack trace for all messages at
 // or above a given level.
 func AddStacktrace(lvl zapcore.LevelEnabler) Option {

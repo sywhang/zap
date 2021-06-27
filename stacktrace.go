@@ -35,7 +35,7 @@ var (
 	}
 )
 
-func takeStacktrace(skip int) string {
+func takeStacktrace(skip int, maxFrames int) string {
 	buffer := bufferpool.Get()
 	defer buffer.Free()
 	programCounters := _stacktracePool.Get().(*programCounters)
@@ -46,6 +46,12 @@ func takeStacktrace(skip int) string {
 		// Skip the call to runtime.Callers and takeStacktrace so that the
 		// program counters start at the caller of takeStacktrace.
 		numFrames = runtime.Callers(skip+2, programCounters.pcs)
+
+		// Truncate numFrames to maxFrames if applicable.
+		if maxFrames < numFrames {
+			numFrames = maxFrames
+		}
+
 		if numFrames < len(programCounters.pcs) {
 			break
 		}

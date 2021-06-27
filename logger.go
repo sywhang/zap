@@ -23,6 +23,7 @@ package zap
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"runtime"
 	"strings"
@@ -49,7 +50,8 @@ type Logger struct {
 
 	addStack zapcore.LevelEnabler
 
-	callerSkip int
+	callerSkip  int
+	callerLimit int
 
 	clock zapcore.Clock
 }
@@ -130,6 +132,7 @@ func NewExample(options ...Option) *Logger {
 func (log *Logger) Sugar() *SugaredLogger {
 	core := log.clone()
 	core.callerSkip += 2
+	core.callerLimit = math.MaxInt32
 	return &SugaredLogger{core}
 }
 

@@ -374,7 +374,13 @@ func StackSkip(key string, skip int) Field {
 	// from expanding the zapcore.Field union struct to include a byte slice. Since
 	// taking a stacktrace is already so expensive (~10us), the extra allocation
 	// is okay.
-	return String(key, takeStacktrace(skip+1)) // skip StackSkip
+	return String(key, takeStacktrace(skip+1, math.MaxInt32)) // skip StackSkip
+}
+
+// StackSkipTruncate constructs a field similar to StackSkip, but it also lets
+// you limit the total number of frames to be included in the stacktrace.
+func StackSkipTruncate(key string, skip int, limit int) Field {
+	return String(key, takeStacktrace(skip+1, limit))
 }
 
 // Duration constructs a field with the given key and value. The encoder
