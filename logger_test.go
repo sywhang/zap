@@ -476,12 +476,10 @@ func TestLoggerAddCallerFail(t *testing.T) {
 }
 
 func TestLoggerSetLimit(t *testing.T) {
-	withLogger(t, DebugLevel, opts(AddCaller(), SetCallerLimit(1)), func(log *Logger, logs *observer.ObservedLogs) {
+	withLogger(t, DebugLevel, opts(AddCaller(), AddStacktrace(DebugLevel), SetCallerLimit(2)), func(log *Logger, logs *observer.ObservedLogs) {
 		infoLog(log, "")
 		entries := logs.AllUntimed()
-
 		assert.Equal(t, 1, len(entries), "Unexpected number of logs written out.")
-
 		entry := entries[0]
 
 		assert.Regexp(
@@ -491,10 +489,17 @@ func TestLoggerSetLimit(t *testing.T) {
 			"Didn't find expected caller function.",
 		)
 
-		assert.NotRegexp(
+		assert.Regexp(
 			t,
 			"go.uber.org/zap.withLogger",
-			entry.Entry.Caller.Function,
+			entry.Entry.Stack,
+			"Didn't find expected function in stacktrace."
+		)
+
+		assert.NotRegexp(
+			t,
+			"runtime.goexit",
+			entry.Entry.Stack,
 			"Found an unexpected caller function.",
 		)
 	})
