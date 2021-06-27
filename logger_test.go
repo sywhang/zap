@@ -417,6 +417,12 @@ func TestLoggerAddCallerFunction(t *testing.T) {
 			loggerFunction:  "runtime.goexit",
 			sugaredFunction: "runtime.goexit",
 		},
+		{
+			options:         opts(AddCaller(), SetCallerLimit(1)),
+			loggerFunction:  "go.uber.org/zap.infoLog",
+			sugaredFunction: "go.uber.org/zap.infoLogSugared",
+		},
+
 	}
 	for _, tt := range tests {
 		withLogger(t, DebugLevel, tt.options, func(logger *Logger, logs *observer.ObservedLogs) {
@@ -466,6 +472,31 @@ func TestLoggerAddCallerFail(t *testing.T) {
 			logs.AllUntimed()[0].Entry.Caller.Function,
 			"",
 			"Expected function name to be empty string.")
+	})
+}
+
+func TestLoggerSetLimit(t *testing.T) {
+	withLogger(t, DebugLevel, opts(AddCaller(), SetCallerLimit(1)), func(log *Logger, logs *observer.ObservedLogs) {
+		infoLog(log, "")
+		entries := logs.AllUntimed()
+
+		assert.Equal(t, 1, len(entries), "Unexpected number of logs written out.")
+
+		entry := entries[0]
+
+		assert.Regexp(
+			t,
+			"infoLog",
+			entry.Entry.Caller.Function,
+			"Didn't find expected caller function.",
+		)
+
+		assert.NotRegexp(
+			t,
+			"go.uber.org/zap.withLogger",
+			entry.Entry.Caller.Function,
+			"Found an unexpected caller function.",
+		)
 	})
 }
 
