@@ -607,3 +607,11 @@ func infoLog(logger *Logger, msg string, fields ...Field) {
 func infoLogSugared(logger *SugaredLogger, args ...interface{}) {
 	logger.Info(args...)
 }
+
+func TestStderrLogger(t *testing.T) {
+	logger, err := NewProduction()
+	require.NoError(t, err)
+
+	err = logger.Sync()
+	require.NoError(t, err)
+}

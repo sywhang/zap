@@ -58,22 +58,30 @@ type Sink interface {
 	zapcore.WriteSyncer
 	io.Closer
 }
+type nopCloserSink struct {
+	zapcore.WriteSyncer
+}
 
-type nopCloserSink struct{
+func (nopCloserSink) Close() error { return nil }
+
+// stdStreamSink represents a Sink for either Stderr or Stdout
+type stdStreamSink struct {
 	ws zapcore.WriteSyncer
 	fd uintptr
 }
 
-func (nopCloserSink) Close() error {return nil }
+func (stdStreamSink) Close() error {return nil }
 
-func (s nopCloserSink) Write(b []byte) (int, error) {
+func (s stdStreamSink) Write(b []byte) (int, error) {
 	return s.ws.Write(b)
 }
 
-func (s nopCloserSink) Sync() error {
+func (s stdStreamSink) Sync() error {
 	err := syscall.Fsync(int(s.fd))
 	// Ignore "invalid argument" error
 	if err == syscall.Errno(0x16) { // EINVAL
+		return nil
+	} else if err == syscall.Errno(0x19) { // ENOTTY
 		return nil
 	}
 	return err
@@ -149,9 +157,9 @@ func newFileSink(u *url.URL) (Sink, error) {
 	}
 	switch u.Path {
 	case "stdout":
-		return nopCloserSink{os.Stdout, os.Stdout.Fd()}, nil
+		return stdStreamSink{os.Stdout, os.Stdout.Fd()}, nil
 	case "stderr":
-		return nopCloserSink{os.Stderr, os.Stderr.Fd()}, nil
+		return stdStreamSink{os.Stderr, os.Stderr.Fd()}, nil
 	}
 	return os.OpenFile(u.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 }
