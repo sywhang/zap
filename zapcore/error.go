@@ -61,19 +61,24 @@ func encodeError(key string, err error, enc ObjectEncoder) (retErr error) {
 		}
 	}()
 
-	basic := err.Error()
-	enc.AddString(key, basic)
-
 	switch e := err.(type) {
 	case errorGroup:
+		basic := err.Error()
+		enc.AddString(key, basic)
 		return enc.AddArray(key+"Causes", errArray(e.Errors()))
+	case ObjectMarshaler:
+		return enc.AddObject("error", e)
 	case fmt.Formatter:
 		verbose := fmt.Sprintf("%+v", e)
+		basic := err.Error()
+		enc.AddString(key, basic)
 		if verbose != basic {
 			// This is a rich error type, like those produced by
 			// github.com/pkg/errors.
 			enc.AddString(key+"Verbose", verbose)
 		}
+	default:
+		enc.AddString(key, err.Error())
 	}
 	return nil
 }

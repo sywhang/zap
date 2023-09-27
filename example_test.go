@@ -22,6 +22,7 @@ package zap_test
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -30,6 +31,21 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+type MyError struct {
+	err  error
+	name string
+}
+
+func (e *MyError) Error() string {
+	return "err: " + e.err.Error() + ", name: " + e.name
+}
+
+func (e *MyError) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("error", e.err.Error())
+	enc.AddString("name", e.name)
+	return nil
+}
 
 func Example_presets() {
 	// Using zap's preset constructors is the simplest way to get a feel for the
@@ -50,6 +66,8 @@ func Example_presets() {
 	)
 	sugar.Infof("Failed to fetch URL: %s", url)
 
+	myErr := &MyError{err: errors.New("yikes"), name: "man"}
+
 	// In the unusual situations where every microsecond matters, use the
 	// Logger. It's even faster than the SugaredLogger, but only supports
 	// structured logging.
@@ -58,11 +76,12 @@ func Example_presets() {
 		zap.String("url", url),
 		zap.Int("attempt", 3),
 		zap.Duration("backoff", time.Second),
+		zap.Error(myErr),
 	)
 	// Output:
 	// {"level":"info","msg":"Failed to fetch URL.","url":"http://example.com","attempt":3,"backoff":"1s"}
 	// {"level":"info","msg":"Failed to fetch URL: http://example.com"}
-	// {"level":"info","msg":"Failed to fetch URL.","url":"http://example.com","attempt":3,"backoff":"1s"}
+	// {"level":"info","msg":"Failed to fetch URL.","url":"http://example.com","attempt":3,"backoff":"1s","error":{"error":"yikes","name":"man"}}
 }
 
 func Example_basicConfiguration() {
